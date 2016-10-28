@@ -356,6 +356,69 @@ inline void SoftmaxGrad(Tensor<cpu, 3, DType> dst,
 }
 
 template<typename DType>
+inline void SoftmaxWithNegativeGrad(Tensor<cpu, 2, DType> dst,
+                        const Tensor<cpu, 2, DType> &src,
+                        const Tensor<cpu, 1, DType> &label,
+                        const DType &neg_grad_scale) {
+  for (index_t y = 0; y < dst.size(0); ++y) {
+    const int k = static_cast<int>(label[y]);
+    if (k >= 0) {
+      for (index_t x = 0; x < dst.size(1); ++x) {
+        if (x == k) {
+          dst[y][k] = src[y][k] - 1.0f;
+        } else {
+          dst[y][x] = src[y][x];
+        }
+      }
+    } else {
+      for (int x = 0; x < dst.size(1); ++x) {
+        if (x == -k) {
+          dst[y][-k] = src[y][-k] * neg_grad_scale;
+        } else {
+          dst[y][x] = src[y][x] * (-src[y][-k] / (1.0f - src[y][-k] + 10e-8f)) * neg_grad_scale;
+        }
+      }
+    }
+  }
+}
+
+template<typename DType>
+inline void SoftmaxWithNegativeGrad(Tensor<cpu, 2, DType> dst,
+                        const Tensor<cpu, 2, DType> &src,
+                        const Tensor<cpu, 1, DType> &label,
+                        const DType &neg_grad_scale,
+                        const DType &ignore_label) {
+  for (index_t y = 0; y < dst.size(0); ++y) {
+    const int k = static_cast<int>(label[y]);
+    if (k >= 0) {
+      for (index_t x = 0; x < dst.size(1); ++x) {
+        if (static_cast<int>(ignore_label) == k) {
+          dst[y][x] = 0.0f;
+        } else {
+          if (x == k) {
+            dst[y][k] = src[y][k] - 1.0f;
+          } else {
+            dst[y][x] = src[y][x];
+          }
+        }
+      }
+    } else {
+      for (int x = 0; x < dst.size(1); ++x) {
+        if (static_cast<int>(ignore_label) == -k) {
+          dst[y][x] = 0.0f;
+        } else {
+          if (x == -k) {
+            dst[y][-k] = src[y][-k] * neg_grad_scale;
+          } else {
+            dst[y][x] = src[y][x] * (-src[y][-k] / (1.0f - src[y][-k] + 10e-8f)) * neg_grad_scale;
+          }
+        }
+      }
+    }
+  }
+}
+
+template<typename DType>
 inline void Softmax(Tensor<cpu, 2, DType> dst,
                     const Tensor<cpu, 2, DType> &energy) {
   CHECK_EQ(dst.shape_, energy.shape_) << "Softmax: shape mismatch";
