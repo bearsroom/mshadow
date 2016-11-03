@@ -200,8 +200,9 @@ template<typename DType>
 inline void SoftmaxWithNegativeGrad(Tensor<gpu, 2, DType> dst,
                         const Tensor<gpu, 2, DType> &src,
                         const Tensor<gpu, 1, DType> &label,
-                        const DType &neg_grad_scale) {
-  cuda::SoftmaxWithNegativeGrad(dst, src, label, neg_grad_scale);
+                        const DType &neg_grad_scale,
+                        const bool &ignore_negative) {
+  cuda::SoftmaxWithNegativeGrad(dst, src, label, neg_grad_scale, ignore_negative);
 }
 
 template<typename DType>
@@ -209,8 +210,9 @@ inline void SoftmaxWithNegativeGrad(Tensor<gpu, 2, DType> dst,
                         const Tensor<gpu, 2, DType> &src,
                         const Tensor<gpu, 1, DType> &label,
                         const DType &neg_grad_scale,
-                        const DType &ignore_label) {
-  cuda::SoftmaxWithNegativeGrad(dst, src, label, neg_grad_scale, ignore_label);
+                        const DType &ignore_label,
+                        const bool &ignore_negative) {
+  cuda::SoftmaxWithNegativeGrad(dst, src, label, neg_grad_scale, ignore_label, ignore_negative);
 }
 
 template<typename IndexType, typename DType>

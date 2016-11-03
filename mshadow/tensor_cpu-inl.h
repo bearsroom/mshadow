@@ -359,7 +359,8 @@ template<typename DType>
 inline void SoftmaxWithNegativeGrad(Tensor<cpu, 2, DType> dst,
                         const Tensor<cpu, 2, DType> &src,
                         const Tensor<cpu, 1, DType> &label,
-                        const DType &neg_grad_scale) {
+                        const DType &neg_grad_scale, 
+                        const bool &ignore_negative) {
   for (index_t y = 0; y < dst.size(0); ++y) {
     const int k = static_cast<int>(label[y]);
     if (k >= 0) {
@@ -369,6 +370,10 @@ inline void SoftmaxWithNegativeGrad(Tensor<cpu, 2, DType> dst,
         } else {
           dst[y][x] = src[y][x];
         }
+      }
+    } else if (ignore_negative == true) {
+      for (index_t x = 0; x < dst.size(1); ++x) {
+        dst[y][x] = DType(0.0f);
       }
     } else {
       for (int x = 0; x < dst.size(1); ++x) {
@@ -387,7 +392,8 @@ inline void SoftmaxWithNegativeGrad(Tensor<cpu, 2, DType> dst,
                         const Tensor<cpu, 2, DType> &src,
                         const Tensor<cpu, 1, DType> &label,
                         const DType &neg_grad_scale,
-                        const DType &ignore_label) {
+                        const DType &ignore_label,
+                        const bool &ignore_negative) {
   for (index_t y = 0; y < dst.size(0); ++y) {
     const int k = static_cast<int>(label[y]);
     if (k >= 0) {
@@ -401,6 +407,10 @@ inline void SoftmaxWithNegativeGrad(Tensor<cpu, 2, DType> dst,
             dst[y][x] = src[y][x];
           }
         }
+      }
+    } else if (ignore_negative == true) {
+      for (index_t x = 0; x < dst.size(1); ++x) {
+        dst[y][x] = DType(0.0f);
       }
     } else {
       for (int x = 0; x < dst.size(1); ++x) {

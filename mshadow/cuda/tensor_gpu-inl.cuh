@@ -259,7 +259,7 @@ __global__ void SoftmaxGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan2 label, ind
 }
 
 template<int x_bits, typename DType, typename DstPlan, typename SrcPlan1, typename SrcPlan2>
-__global__ void SoftmaxWithNegativeGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan2 label, index_t xmax, DType neg_grad_scale) {
+__global__ void SoftmaxWithNegativeGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan2 label, index_t xmax, DType neg_grad_scale, bool ignore_negative) {
   const unsigned x_size = 1 << x_bits;
   const int y = blockIdx.x;
   const int k = static_cast<int>(label.Eval(0, y));
@@ -274,6 +274,8 @@ __global__ void SoftmaxWithNegativeGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan
         } else {
           dst.REval(y, xindex) = src.Eval(y, xindex);
         }
+      } else if (ignore_negative == true) {
+          dst.REval(y, xindex) = 0.0f;
       } else {
         if (xindex == -k) {
           dst.REval(y, xindex) = src.Eval(y, xindex) * neg_grad_scale;
@@ -286,7 +288,7 @@ __global__ void SoftmaxWithNegativeGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan
 }
 
 template<int x_bits, typename DType, typename DstPlan, typename SrcPlan1, typename SrcPlan2>
-__global__ void SoftmaxWithNegativeGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan2 label, index_t xmax, DType neg_grad_scale, DType ignore_label) {
+__global__ void SoftmaxWithNegativeGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan2 label, index_t xmax, DType neg_grad_scale, DType ignore_label, bool ignore_negative) {
   const unsigned x_size = 1 << x_bits;
   const int y = blockIdx.x;
   const int k = static_cast<int>(label.Eval(0, y));
@@ -303,8 +305,10 @@ __global__ void SoftmaxWithNegativeGradKernel(DstPlan dst, SrcPlan1 src, SrcPlan
         } else {
           dst.REval(y, xindex) = src.Eval(y, xindex);
         }
+      } else if (ignore_negative == true) {
+          dst.REval(y, xindex) = 0.0f;
       } else {
-        if (static_cast<int>(ignore_label) == k) {
+        if (static_cast<int>(ignore_label) == -k) {
           dst.REval(y, xindex) = 0.0f;
         } else if (xindex == -k) {
           dst.REval(y, xindex) = src.Eval(y, xindex) * neg_grad_scale;
@@ -422,7 +426,8 @@ template<typename DType>
 inline void SoftmaxWithNegativeGrad(Tensor<gpu, 2, DType> &dst,
                         const Tensor<gpu, 2, DType> &src,
                         const Tensor<gpu, 1, DType> &label,
-                        const DType &neg_grad_scale) {
+                        const DType &neg_grad_scale,
+                        const bool &ignore_negative) {
   dim3 dimBlock(kBaseThreadNum);
   dim3 dimGrid(dst.size(0));
   CHECK_EQ(dst.shape_, src.shape_) << "SoftmaxWithNegativeGrad: shape mismatch";
@@ -435,7 +440,8 @@ inline void SoftmaxWithNegativeGrad(Tensor<gpu, 2, DType> &dst,
        expr::MakePlan(src),
        expr::MakePlan(label),
        dst.size(1),
-       neg_grad_scale);
+       neg_grad_scale,
+       ignore_negative);
 }
 
 template<typename DType>
@@ -443,7 +449,8 @@ inline void SoftmaxWithNegativeGrad(Tensor<gpu, 2, DType> &dst,
                         const Tensor<gpu, 2, DType> &src,
                         const Tensor<gpu, 1, DType> &label,
                         const DType &neg_grad_scale,
-                        const DType &ignore_label) {
+                        const DType &ignore_label,
+                        const bool &ignore_negative) {
   dim3 dimBlock(kBaseThreadNum);
   dim3 dimGrid(dst.size(0));
   CHECK_EQ(dst.shape_, src.shape_) << "SoftmaxWithNegativeGrad: shape mismatch";
@@ -457,7 +464,8 @@ inline void SoftmaxWithNegativeGrad(Tensor<gpu, 2, DType> &dst,
        expr::MakePlan(label),
        dst.size(1),
        neg_grad_scale,
-       ignore_label);
+       ignore_label,
+       ignore_negative);
 }
 
 template<int n_bits, typename DType>
