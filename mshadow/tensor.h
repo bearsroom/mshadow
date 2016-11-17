@@ -751,6 +751,38 @@ template<typename DType>
 inline void SoftmaxGrad(Tensor<gpu, 2, DType> dst,
                         const Tensor<gpu, 2, DType> &src,
                         const Tensor<gpu, 1, DType> &label);
+
+/*!
+ * \brief CPU/GPU: softmax gradient with negative label (negative label is given as -(label_idx))
+ * \warning: currently only support negative samples with label index > 0, i.e cannot deal with negative samples of label idx 0
+ * \param dst destination
+ * \param src source output
+ * \param label label info
+ * \param neg_grad_scale gradient scale for samples with negative label
+ * \param ignore_negative whether to ignore all samples with negative label
+ */
+template<typename DType>
+inline void SoftmaxWithNegativeGrad(Tensor<cpu, 2, DType> dst,
+                        const Tensor<cpu, 2, DType> &src,
+                        const Tensor<cpu, 1, DType> &label,
+                        const DType &neg_grad_scale,
+                        const bool &ignore_negative);
+/*!
+ * \brief CPU/GPU: softmax gradient with negative label (negative label is given as -(label_idx))
+ * \warning: currently only support negative samples with label index > 0, i.e cannot deal with negative samples of label idx 0
+ * \param dst destination
+ * \param src source output
+ * \param label label info
+ * \param neg_grad_scale gradient scale for samples with negative label
+ * \param ignore_negative whether to ignore all samples with negative label
+ */
+template<typename DType>
+inline void SoftmaxWithNegativeGrad(Tensor<gpu, 2, DType> dst,
+                        const Tensor<gpu, 2, DType> &src,
+                        const Tensor<gpu, 1, DType> &label,
+                        const DType &neg_grad_scale,
+                        const bool &ignore_negative);
+
 /*!
  * \brief CPU/GPU: Gradient accumulate of embedding matrix. dst += take_grad(src, index)
                    Called when the featuredim of src is much larger than the batchsize
